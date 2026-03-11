@@ -1,0 +1,39 @@
+# ===================================================================
+# 配置文件模板说明
+# ===================================================================
+# 这是配置文件模板，请复制此文件并重命名为 default.yaml
+# 然后在 default.yaml 中填入您的真实配置信息
+# default.yaml 文件已被 .gitignore 忽略，不会被提交到版本库
+#
+# 使用步骤：
+# 1. 复制本文件：cp configs/set.yaml configs/default.yaml
+# 2. 编辑 configs/default.yaml，填入真实的配置信息
+# 3. 运行程序：python cgyy.py
+# ===================================================================
+
+sso:
+  user: 'YOUR_STUDENT_ID' # 统一认证学号/工号
+  passwd: 'YOUR_PASSWORD' # 统一认证密码
+
+# 浏览器配置
+browser:
+  headless: false # 静默运行模式（true: 后台运行不显示窗口, false: 显示浏览器窗口）
+
+# 邮件通知配置（用于预约成功后发送通知）
+email:
+  sender: 'your_email@qq.com' # 发件人邮箱（建议使用QQ邮箱）
+  password: 'your_smtp_authorization_code' # SMTP授权码（不是邮箱登录密码！QQ邮箱在设置-账户里生成）
+  receiver: 'receiver_email@qq.com' # 收件人邮箱（接收预约通知的邮箱）
+  smtp_server: 'smtp.qq.com' # SMTP服务器（QQ邮箱使用smtp.qq.com，其他邮箱请查阅相应文档）
+  smtp_port: 465 # SMTP端口（SSL方式使用465）
+
+priority: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] # 场地优先级
+
+# 监测时间段范围（24小时制）
+# 格式：[[起始小时1, 结束小时1], [起始小时2, 结束小时2], ...]
+# 只有在这些时间段内的场地才会发送邮件通知
+# 例如：[[7, 22]] 表示只监测 7:00-22:00 之间的场地
+# 多个时间段：[[7, 12], [18, 22]] 表示只监测 7:00-12:00 和 18:00-22:00
+reserve_time: [[9, 22]]
+
+candidate: 1 # 第几候选同伴
