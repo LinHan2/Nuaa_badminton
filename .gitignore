@@ -1,6 +1,9 @@
 # 忽略包含敏感信息的配置文件
 configs/default.yaml
 
+# 自动生成的脚本文件
+run_scheduled.bat
+
 # Python 相关
 __pycache__/
 *.py[cod]
