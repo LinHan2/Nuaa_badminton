@@ -96,7 +96,9 @@ browser:
 email:
   sender: '1234567890@qq.com'    # 发件邮箱（QQ邮箱）
   password: 'abcdefghijklmnop'   # SMTP授权码（不是邮箱密码！）
-  receiver: '1234567890@qq.com'  # 收件邮箱（接收通知的邮箱）
+   receiver:                      # 收件邮箱列表（支持多个）
+      - '1234567890@qq.com'
+      - '9876543210@qq.com'
   smtp_server: 'smtp.qq.com'     # SMTP服务器
   smtp_port: 465                 # SMTP端口
 
@@ -140,9 +142,23 @@ candidate: 1
 |------|------|----------|
 | `sender` | 发件邮箱 | 你的QQ邮箱地址 |
 | `password` | SMTP授权码 | 见下方"获取QQ邮箱SMTP授权码" |
-| `receiver` | 收件邮箱 | 接收通知的邮箱（可以与发件邮箱相同） |
+| `receiver` | 收件邮箱列表 | 接收通知的邮箱，支持填写多个 |
 | `smtp_server` | SMTP服务器 | QQ邮箱固定为 `smtp.qq.com` |
 | `smtp_port` | SMTP端口 | 固定为 `465` |
+
+`receiver` 推荐写成 YAML 列表：
+
+```yaml
+receiver:
+   - 'a@qq.com'
+   - 'b@qq.com'
+```
+
+也兼容旧写法：
+
+```yaml
+receiver: 'a@qq.com,b@qq.com'
+```
 
 **获取QQ邮箱SMTP授权码**：
 

@@ -38,10 +38,13 @@ set INTERVAL=1800
 **特点：**
 - 开机自动启动（延迟1分钟，避免开机卡顿）
 - 后台运行，不会显示窗口
-- 每隔指定时间（默认30分钟）自动运行一次
+- 每隔指定时间（默认15分钟）自动运行一次
 - 更稳定，系统级别的任务管理
 - 可在 Windows 任务计划程序中统一管理
 - 即使关机重启，任务也会自动恢复运行
+- 每次运行自动保存日志到项目目录下的 `logs\cgyy.log`
+- 每次运行会覆盖上一次日志（始终保留最新一次完整输出）
+- 配置完成后会立即执行一次，方便立刻验证
 
 **使用步骤：**
 
@@ -56,23 +59,36 @@ set INTERVAL=1800
    .\setup_task_scheduler.ps1
    ```
 
-3. **根据提示完成配置：**
-   - 脚本会自动创建名为 "BUAA_场地预约" 的任务
-   - 询问是否立即启动任务，输入 `Y` 确认
+3. **脚本自动完成配置并立即执行一次：**
+   - 自动创建名为 "BUAA_场地预约" 的任务
+   - 创建后会自动触发一次任务执行（无需额外输入 Y/N）
 
 4. **任务创建完成！**
-   - 任务会每隔 30 分钟自动运行一次
+   - 任务会每隔 15 分钟自动运行一次（可自行修改）
    - **开机后会自动启动**（延迟1分钟）
    - 每天早上 7:00 也会自动启动（双重保障）
    - 无需手动启动，完全自动化
+
+5. **查看最近一次运行日志：**
+
+```powershell
+cd E:\HL_GIT\BUAA_CGYY
+powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1
+```
+
+可选参数（查看最后 300 行）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1 -Tail 300
+```
 
 **自定义运行间隔：**
 
 编辑 `setup_task_scheduler.ps1`，修改以下行：
 ```powershell
-$IntervalMinutes = 30
+$IntervalMinutes = 15
 ```
-将 `30` 改为你想要的间隔分钟数。
+将 `15` 改为你想要的间隔分钟数。
 
 **管理任务：**
 
@@ -142,6 +158,8 @@ while ($true) {
      - 使用 PowerShell 查看任务信息：`Get-ScheduledTaskInfo -TaskName "BUAA_场地预约"`
      - 在任务计划程序（taskschd.msc）的"历史记录"标签页查看详细日志
      - `LastTaskResult` 为 `0` 表示成功，其他值表示错误代码
+   - 项目目录下会生成 `logs\cgyy.log`（每次运行覆盖）
+   - 使用 `powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1` 快速查看上次打印信息
 
 5. **任务状态说明：**
    - `Ready` - 就绪状态，等待下次运行
@@ -162,6 +180,11 @@ while ($true) {
 - 检查任务历史记录，查看错误信息
 - 确保以管理员身份运行了配置脚本
 - 检查 `run_scheduled.bat` 文件是否创建成功
+
+**问题：任务运行了但没收到邮件**
+- 先查看最近日志：`powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1 -Tail 300`
+- 检查日志里是否出现 `发送邮件失败`、`未配置收件人邮箱`、SMTP 登录失败等提示
+- 确认 `configs/default.yaml` 中 `email.receiver`、`email.sender`、`email.password` 配置正确
 
 **问题：程序运行但没有预约成功**
 - 检查 `configs/default.yaml` 配置是否正确

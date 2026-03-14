@@ -555,14 +555,25 @@ def send_email_notification(subject_or_venue_info, body_or_time_info):
         
         sender_email = email_config['sender']
         sender_password = email_config['password']
-        receiver_email = email_config['receiver']
+        receiver_config = email_config.get('receiver', [])
+        if isinstance(receiver_config, str):
+            receiver_emails = [email.strip() for email in receiver_config.replace(';', ',').split(',') if email.strip()]
+        elif isinstance(receiver_config, (list, tuple, set)):
+            receiver_emails = [str(email).strip() for email in receiver_config if str(email).strip()]
+        else:
+            raise ValueError("email.receiver 配置格式错误，应为字符串或邮箱列表")
+
+        if not receiver_emails:
+            print("未配置收件人邮箱，跳过发送")
+            return
+
         smtp_server = email_config.get('smtp_server', 'smtp.qq.com')
         smtp_port = email_config.get('smtp_port', 465)
         
         # 创建邮件内容
         message = MIMEMultipart()
         message['From'] = formataddr(("北航场馆预约通知", sender_email))
-        message['To'] = formataddr(("用户", receiver_email))
+        message['To'] = ', '.join(receiver_emails)
         
         # 判断是新格式（直接传主题）还是旧格式（传场馆信息）
         if '\n' in body_or_time_info and '━' in body_or_time_info:
@@ -605,9 +616,9 @@ def send_email_notification(subject_or_venue_info, body_or_time_info):
         # 发送邮件
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
             server.login(sender_email, sender_password)
-            server.sendmail(sender_email, receiver_email, message.as_string())
+            server.sendmail(sender_email, receiver_emails, message.as_string())
         
-        print(datetime.datetime.now().time(), f"邮件通知已发送至 {receiver_email}")
+        print(datetime.datetime.now().time(), f"邮件通知已发送至 {', '.join(receiver_emails)}")
         return True
     except Exception as e:
         print(f"发送邮件失败: {e}")
@@ -815,7 +826,12 @@ if __name__ == '__main__':
         # 发送邮件
         send_email_notification(email_subject, email_body)
         
-        print(f"\n✅ 邮件通知已发送到 {configs['email']['receiver']}")
+        receiver_config = configs['email'].get('receiver', [])
+        if isinstance(receiver_config, str):
+            receiver_display = ', '.join([email.strip() for email in receiver_config.replace(';', ',').split(',') if email.strip()])
+        else:
+            receiver_display = ', '.join([str(email).strip() for email in receiver_config if str(email).strip()])
+        print(f"\n✅ 邮件通知已发送到 {receiver_display}")
         print("请登录系统查看详情并预约：https://cgyy.buaa.edu.cn")
     else:
         print("所有场馆都暂无可用场地。")

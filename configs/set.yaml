@@ -23,7 +23,9 @@ browser:
 email:
   sender: 'your_email@qq.com' # 发件人邮箱（建议使用QQ邮箱）
   password: 'your_smtp_authorization_code' # SMTP授权码（不是邮箱登录密码！QQ邮箱在设置-账户里生成）
-  receiver: 'receiver_email@qq.com' # 收件人邮箱（接收预约通知的邮箱）
+  receiver: # 收件人邮箱列表（可填写多个邮箱）
+    - 'receiver_email_1@qq.com'
+    - 'receiver_email_2@qq.com'
   smtp_server: 'smtp.qq.com' # SMTP服务器（QQ邮箱使用smtp.qq.com，其他邮箱请查阅相应文档）
   smtp_port: 465 # SMTP端口（SSL方式使用465）
 

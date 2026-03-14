@@ -15,7 +15,7 @@ echo.
 REM 设置运行间隔时间（秒）
 REM 默认为 1800 秒（30分钟）
 REM 可根据需要修改此值
-set INTERVAL=1800
+set INTERVAL=900
 
 REM 激活 conda 环境（如果你使用 conda）
 REM 如果不使用 conda，可以注释掉下面这行
