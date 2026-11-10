@@ -1,6 +1,9 @@
 # 忽略包含敏感信息的配置文件
 configs/default.yaml
 
+# Project-local pinned browser and driver binaries
+.browser/
+
 # 自动生成的脚本文件
 run_scheduled.bat
 

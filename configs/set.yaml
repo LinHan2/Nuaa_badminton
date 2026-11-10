@@ -17,7 +17,7 @@ sso:
 
 # 浏览器配置
 browser:
-  headless: false # 静默运行模式（true: 后台运行不显示窗口, false: 显示浏览器窗口）
+  headless: true # 静默运行模式（true: 后台运行不显示窗口, false: 显示浏览器窗口）
 
 # 邮件通知配置（用于预约成功后发送通知）
 email:

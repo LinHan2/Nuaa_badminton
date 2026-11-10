@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+﻿# -*- coding:utf-8 -*-
 from selenium import webdriver
 import datetime
 from selenium.webdriver.support.wait import WebDriverWait
@@ -15,13 +15,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email.utils import formataddr
+from pathlib import Path
 
 # 先读取配置文件
 begin_time = "07:00:00"  # 注意07的0
 
 conf_file = open('configs/default.yaml', 'r',encoding='utf-8')
 configs = yaml.load(conf_file, Loader=yaml.Loader)
-
 # 监测时间段范围配置
 # 格式：[[7, 22]] 表示只监测 7:00-22:00 之间的场地
 # 可以设置多个区间：[[7, 12], [18, 22]] 表示只监测 7-12点 和 18-22点
@@ -67,7 +67,18 @@ def is_time_in_range(time_slot_str, time_ranges):
 
 
 # 配置Chrome选项
+browser_version = '156.0.8078.73'
+browser_dir = Path(__file__).resolve().parent / '.browser' / browser_version
+browser_binary = browser_dir / 'chrome-win64' / 'chrome.exe'
+driver_binary = browser_dir / 'chromedriver-win64' / 'chromedriver.exe'
+for binary in (browser_binary, driver_binary):
+    if not binary.is_file():
+        raise FileNotFoundError(
+            f'Missing pinned browser runtime: {binary}. Run .\\install_browser.ps1 first.')
+
 chrome_options = Options()
+chrome_options.page_load_strategy = 'eager'
+chrome_options.binary_location = str(browser_binary)
 
 # 根据配置决定是否使用静默模式
 if configs.get('browser', {}).get('headless', True):  # 默认使用headless模式
@@ -75,6 +86,7 @@ if configs.get('browser', {}).get('headless', True):  # 默认使用headless模�
     chrome_options.add_argument('--headless')  # 无窗口模式
 else:
     print("🖥️ 使用可见窗口模式运行")
+    pass
 
 # 添加其他优化选项
 chrome_options.add_argument('--disable-gpu')  # 禁用GPU加速
@@ -84,10 +96,8 @@ chrome_options.add_argument('--window-size=1920,1080')  # 设置窗口大小
 chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 防止被检测为自动化
 chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36')
 
-driver = webdriver.Chrome(service=Service(r"./chromedriver.exe"), options=chrome_options)
-# driver = webdriver.Chrome(r"chromedriver")
-# driver下载地址 https://chromedriver.storage.googleapis.com/index.html
-# driver.maximize_window()  # headless模式下不需要最大化
+print(f'Pinned Chrome/ChromeDriver: {browser_version}')
+driver = webdriver.Chrome(service=Service(str(driver_binary)), options=chrome_options)
 
 
 def explicit_click(by, value):
@@ -351,7 +361,7 @@ def get_venue_data_from_js():
             print(f"  [调试] JavaScript执行信息:")
             for debug_msg in result['debug']:
                 print(f"    - {debug_msg}")
-        
+                pass
         return result
     except Exception as e:
         print(f"获取JavaScript数据失败: {e}")
@@ -365,7 +375,6 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
     # 轮询三天的场地：今天、明天、后天
     for day_index in range(3):
         print(f"正在检查第{day_index + 1}天的场地...")
-        
         # 点击对应的日期按钮切换到那一天
         try:
             # 根据HTML结构：.date_box 容器内有多个 div，每个代表一天
@@ -392,10 +401,12 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
                 time.sleep(2)
             else:
                 print(f"警告：未找到第{day_index + 1}天的日期按钮")
+                pass
                     
         except Exception as e:
             print(f"切换到第{day_index + 1}天失败: {e}")
             # 继续执行，尝试在当前页面查找
+            pass
             
         # 保存当前页面HTML用于调试
         try:
@@ -413,7 +424,6 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
             # 不强制重置到第一页，因为页面可能根据当前时间自动定位
             # 如果现在是晚上，页面可能只显示晚上的时间段
             print("从当前时间段开始搜索...")
-            
             page_count = 0
             max_pages = 10  # 增加最大页数，因为现在查找更快
             
@@ -421,7 +431,6 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
             while page_count < max_pages:
                 page_count += 1
                 print(f"正在搜索第 {page_count} 个时间段页面...")
-                
                 # 等待当前页面加载
                 time.sleep(1.5)
                 
@@ -432,10 +441,11 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
                     current_times = venue_data.get('currentTimes', [])
                     if current_times:
                         print(f"  当前时间段: {', '.join(current_times)}")
+                        pass
                     else:
                         print(f"  ⚠️ 未获取到时间段信息")
+                        pass
                     print(f"  找到 {venue_data['freeBlocks']} 个可预约场地块")
-                    
                     # 检查是否有可用场地（无需按优先级，只要有就通知）
                     free_blocks = venue_data.get('freeBlocks', 0)
                     
@@ -463,13 +473,12 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
                                 venue_info_text = f"{venue_num} | {time_slot} | {price}"
                                 available_list.append(venue_info_text)
                                 print(f"    ✓ {venue_info_text}")
-                        
                         if filtered_count > 0:
                             print(f"  ℹ️ 已过滤 {filtered_count} 个不在监测时间范围内的场地")
+                            pass
                         
                         if available_list:
                             print(f"  🎉 发现 {len(available_list)} 个可用场地！")
-                            
                             # 获取当前日期信息
                             from datetime import datetime, timedelta
                             check_date = (datetime.now() + timedelta(days=day_index)).strftime('%m月%d日')
@@ -488,6 +497,7 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
                             # 不再立即发送邮件，继续搜索其他时间段和日期
                 else:
                     print("  ⚠️ 无法获取场地数据")
+                    pass
                 
                 # 尝试翻到下一页继续搜索
                 try:
@@ -528,7 +538,6 @@ def reserve(reserve_time, priority, venue_name="场地", driver=driver):
                     break
             
             print(f"第{day_index + 1}天搜索完成")
-                
         except Exception as e:
             print(f"第{day_index + 1}天查找场地时出错: {str(e)}")
             continue
@@ -712,7 +721,7 @@ def get_last_clicked(driver):
     return driver.execute_script("return window._lastClicked;")
 
 
-if __name__ == '__main__':
+def main():
 
     now = datetime.datetime.now()
     begin_time_today = str(now.date()) + ' ' + begin_time
@@ -723,17 +732,17 @@ if __name__ == '__main__':
     while (now < one_minute_before):
         now = datetime.datetime.now()
         print("等待到达目标时间前一分钟:", now.time())
-
     print(now.time(), "到达目标时间前一分钟，开始启动浏览器内核")
-
+    driver.set_page_load_timeout(60)
     driver.get("https://cgyy.buaa.edu.cn/venue/Login")
 
     # 点击进入场馆预约的统一认证界面，输入用户名密码、确认
-    explicit_click(
-        'css selector',
-        'body > div.fullHeight > div > div > div > div > div.loginFlagWrap > a'
-    )
-    driver.switch_to.frame("loginIframe")
+    safe_click(
+        By.CSS_SELECTOR,
+        'body > div.fullHeight > div > div > div > div > div.loginFlagWrap > a',
+        wait_timeout=30)
+    WebDriverWait(driver, 30, 0.5).until(
+        EC.frame_to_be_available_and_switch_to_it("loginIframe"))
     explicit_find('id', 'unPassword').send_keys(configs['sso']['user'])
     explicit_find('id', 'pwPassword').send_keys(configs['sso']['passwd'])
     explicit_click('class name', 'submit-btn')
@@ -745,14 +754,14 @@ if __name__ == '__main__':
 
     # 点击运动项目中的“羽毛球”入口
     explicit_click('xpath', badminton_selector)
+    WebDriverWait(driver, 30, 0.5).until(EC.url_contains('/venue/venue-introduce'))
+    badminton_list_url = driver.current_url
 
     now = datetime.datetime.now()
     while (now < begin_time_dt):
         now = datetime.datetime.now()
         print("等待到达目标时间:", now.time())
-
     print(now.time(), "到达目标时间，开始抢场地！")
-
     # 定义要检查的场馆列表
     venues_to_check = [
         {
@@ -772,12 +781,14 @@ if __name__ == '__main__':
         print(f"\n{'='*60}")
         print(f"正在检查场馆 {venue_idx + 1}/{len(venues_to_check)}: {venue['name']}")
         print(f"{'='*60}\n")
-        
         try:
-            # 如果不是第一个场馆，需要返回上一页选择新场馆
+            # 如果不是第一个场馆，直接重新加载列表页（history.back 会让 SPA 渲染进程超时）
             if venue_idx > 0:
-                print("返回场馆选择页面...")
-                driver.back()
+                print("重新打开羽毛球场地列表页面...")
+                driver.set_page_load_timeout(60)
+                driver.get(badminton_list_url)
+                WebDriverWait(driver, 30, 0.5).until(
+                    EC.presence_of_element_located((By.XPATH, venue['selector'])))
                 time.sleep(2)
             
             # 点击场馆订场按钮
@@ -794,6 +805,7 @@ if __name__ == '__main__':
                 print(f"✅ 在 {venue['name']} 发现可用场地")
             else:
                 print(f"❌ {venue['name']} 暂无可用场地")
+                pass
                 
         except Exception as e:
             print(f"检查场馆 {venue['name']} 时出错: {e}")
@@ -803,11 +815,9 @@ if __name__ == '__main__':
     print(f"\n{'='*60}")
     print("所有场馆检查完成！")
     print(f"{'='*60}\n")
-    
     if all_venues_info:
         # 构建邮件内容
         print(f"共发现 {len(all_venues_info)} 个时段有可用场地，正在发送邮件通知...")
-        
         email_subject = f"🎉 发现 {len(all_venues_info)} 个时段有可用场地！"
         email_body = "【可用场地汇总通知】\n\n"
         
@@ -835,6 +845,13 @@ if __name__ == '__main__':
         print("请登录系统查看详情并预约：https://cgyy.buaa.edu.cn")
     else:
         print("所有场馆都暂无可用场地。")
+        pass
     
     print(f"{'='*60}\n")
 
+
+if __name__ == '__main__':
+    try:
+        main()
+    finally:
+        driver.quit()

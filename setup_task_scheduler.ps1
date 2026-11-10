@@ -14,7 +14,7 @@ $CondaPath = "D:\anaconda"
 $CondaEnv = "torch"
 
 # 运行间隔（分钟）
-$IntervalMinutes = 15
+$IntervalMinutes = 3
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Windows 任务计划程序配置" -ForegroundColor Cyan
@@ -48,61 +48,30 @@ $BatchContent = @"
 chcp 65001 >nul
 cd /d "$ScriptPath"
 
-set "LOG_DIR=$ScriptPath\logs"
-if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
-
-set "LOG_FILE=%LOG_DIR%\cgyy.log"
 set "CONDA_PATH=$CondaPath"
 set "CONDA_ENV=$CondaEnv"
 set "PYTHON_EXE=%CONDA_PATH%\envs\%CONDA_ENV%\python.exe"
 
-echo ======================================== > "%LOG_FILE%"
-echo [%date% %time%] 定时任务开始执行 >> "%LOG_FILE%"
-echo ======================================== >> "%LOG_FILE%"
+echo ========================================
+echo [%date% %time%] 定时任务开始执行
+echo ========================================
 
 if exist "%PYTHON_EXE%" (
-    echo 使用解释器: %PYTHON_EXE% >> "%LOG_FILE%"
-    "%PYTHON_EXE%" "$PythonScript" >> "%LOG_FILE%" 2>&1
+    echo 使用解释器: %PYTHON_EXE%
+    "%PYTHON_EXE%" "$PythonScript"
 ) else (
-    echo [错误] 未找到解释器: %PYTHON_EXE% >> "%LOG_FILE%"
-    echo 尝试使用 conda run 运行... >> "%LOG_FILE%"
-    call "%CONDA_PATH%\condabin\conda.bat" run -n %CONDA_ENV% python "$PythonScript" >> "%LOG_FILE%" 2>&1
+    echo [错误] 未找到解释器: %PYTHON_EXE%
+    echo 尝试使用 conda run 运行...
+    call "%CONDA_PATH%\condabin\conda.bat" run -n %CONDA_ENV% python "$PythonScript"
 )
 
 set "EXIT_CODE=%ERRORLEVEL%"
-echo ---------------------------------------- >> "%LOG_FILE%"
-echo [%date% %time%] 执行结束，退出码: %EXIT_CODE% >> "%LOG_FILE%"
-echo ---------------------------------------- >> "%LOG_FILE%"
+echo ----------------------------------------
+echo [%date% %time%] 执行结束，退出码: %EXIT_CODE%
+echo ----------------------------------------
 exit /b %EXIT_CODE%
 "@
 Set-Content -Path $BatchFile -Value $BatchContent -Encoding Default
-
-# 创建日志查看脚本（用于查询上次打印信息）
-$ViewLogScript = Join-Path $ScriptPath "view_last_log.ps1"
-$ViewLogContent = @"
-param(
-    [int]
-    `$Tail = 120
-)
-
-`$LogDir = Join-Path `$PSScriptRoot "logs"
-`$LatestLog = Join-Path `$LogDir "cgyy.log"
-
-if (-not (Test-Path `$LogDir)) {
-    Write-Host "未找到日志目录：`$LogDir" -ForegroundColor Yellow
-    exit 1
-}
-
-if (-not (Test-Path `$LatestLog)) {
-    Write-Host "未找到日志文件：`$LatestLog" -ForegroundColor Yellow
-    exit 1
-}
-
-Write-Host "显示最近一次运行日志：`$LatestLog" -ForegroundColor Cyan
-Write-Host "----------------------------------------" -ForegroundColor DarkGray
-Get-Content -Path `$LatestLog -Tail `$Tail
-"@
-Set-Content -Path $ViewLogScript -Value $ViewLogContent -Encoding UTF8
 
 Write-Host "创建任务中..." -ForegroundColor Green
 
@@ -143,7 +112,6 @@ Write-Host "- 运行间隔：每 $IntervalMinutes 分钟" -ForegroundColor White
 Write-Host "- 开机启动：是（延迟1分钟后启动）" -ForegroundColor White
 Write-Host "- 定时启动：每天 07:00" -ForegroundColor White
 Write-Host "- 任务状态：已创建并启用" -ForegroundColor White
-Write-Host "- 日志目录：$ScriptPath\logs" -ForegroundColor White
 Write-Host ""
 Write-Host "管理任务：" -ForegroundColor Yellow
 Write-Host "- 查看状态：Get-ScheduledTask -TaskName '$TaskName' | Select-Object TaskName, State" -ForegroundColor White
@@ -153,7 +121,6 @@ Write-Host "- 停止任务：Stop-ScheduledTask -TaskName '$TaskName'" -Foregrou
 Write-Host "- 禁用任务：Disable-ScheduledTask -TaskName '$TaskName'" -ForegroundColor White
 Write-Host "- 启用任务：Enable-ScheduledTask -TaskName '$TaskName'" -ForegroundColor White
 Write-Host "- 删除任务：Unregister-ScheduledTask -TaskName '$TaskName' -Confirm:`$false" -ForegroundColor White
-Write-Host "- 查看上次日志：powershell -ExecutionPolicy Bypass -File '$ViewLogScript'" -ForegroundColor White
 Write-Host "- 图形界面：按 Win+R 输入 taskschd.msc 打开任务计划程序" -ForegroundColor White
 Write-Host ""
 Write-Host "状态说明：" -ForegroundColor Yellow
@@ -165,8 +132,6 @@ Write-Host ""
 # 创建后立即执行一次
 Start-ScheduledTask -TaskName $TaskName
 Write-Host "已立即触发一次任务执行。" -ForegroundColor Green
-Write-Host "稍等 10-30 秒后可查看日志：" -ForegroundColor Cyan
-Write-Host "powershell -ExecutionPolicy Bypass -File '$ViewLogScript'" -ForegroundColor White
 Write-Host ""
 
 pause

@@ -1,5 +1,26 @@
 # 自动运行脚本使用说明
 
+## 独立固定版本浏览器
+
+脚本只使用项目内的 Chrome for Testing 和配套 ChromeDriver，固定版本为
+`156.0.8078.73`，不再使用系统安装的 Chrome。系统 Chrome 自动升级不会改变这套运行环境。
+
+首次部署或迁移项目后，在项目目录执行（无需管理员权限）：
+
+```powershell
+.\install_browser.ps1
+```
+
+浏览器与驱动安装在 `.browser/156.0.8078.73/`，由 Git 忽略。
+缺失文件时脚本会报错并提示安装，不会回退到系统浏览器或自动下载其他版本。
+安装完成后，原来的手动命令和计划任务入口无需改变；项目根目录旧的
+`chromedriver.exe` 不再被脚本使用。
+
+这套浏览器不会自动升级，但不代表可以永久免维护：旧版本可能存在安全漏洞，
+网站和操作系统也可能改变兼容性。应定期从官方选择新版本，同时更新
+`cgyy.py` 的 `browser_version` 和 `install_browser.ps1` 的 `$Version`，重新安装并验证。
+仅将此浏览器用于预约检测，不用于日常浏览。
+
 本项目提供两种自动运行方案，可根据需求选择：
 
 ## 方案一：持续运行脚本（推荐用于临时运行）
@@ -42,8 +63,6 @@ set INTERVAL=1800
 - 更稳定，系统级别的任务管理
 - 可在 Windows 任务计划程序中统一管理
 - 即使关机重启，任务也会自动恢复运行
-- 每次运行自动保存日志到项目目录下的 `logs\cgyy.log`
-- 每次运行会覆盖上一次日志（始终保留最新一次完整输出）
 - 配置完成后会立即执行一次，方便立刻验证
 
 **使用步骤：**
@@ -69,17 +88,13 @@ set INTERVAL=1800
    - 每天早上 7:00 也会自动启动（双重保障）
    - 无需手动启动，完全自动化
 
-5. **查看最近一次运行日志：**
+5. **查看最近一次运行结果：**
+
+- 使用任务计划程序查看任务历史：任务计划程序库 -> BUAA_场地预约 -> 历史记录
+- 或使用 PowerShell 查看：
 
 ```powershell
-cd E:\HL_GIT\BUAA_CGYY
-powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1
-```
-
-可选参数（查看最后 300 行）：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1 -Tail 300
+Get-ScheduledTaskInfo -TaskName "BUAA_场地预约"
 ```
 
 **自定义运行间隔：**
@@ -153,13 +168,11 @@ while ($true) {
    - 建议在网络稳定的环境下运行
 
 4. **日志查看：**
-   - 方案一：直接在窗口中查看运行日志
-   - 方案二：
-     - 使用 PowerShell 查看任务信息：`Get-ScheduledTaskInfo -TaskName "BUAA_场地预约"`
-     - 在任务计划程序（taskschd.msc）的"历史记录"标签页查看详细日志
-     - `LastTaskResult` 为 `0` 表示成功，其他值表示错误代码
-   - 项目目录下会生成 `logs\cgyy.log`（每次运行覆盖）
-   - 使用 `powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1` 快速查看上次打印信息
+    - 方案一：直接在窗口中查看运行输出
+    - 方案二：
+       - 使用 PowerShell 查看任务信息：`Get-ScheduledTaskInfo -TaskName "BUAA_场地预约"`
+       - 在任务计划程序（taskschd.msc）的"历史记录"标签页查看详细记录
+       - `LastTaskResult` 为 `0` 表示成功，其他值表示错误代码
 
 5. **任务状态说明：**
    - `Ready` - 就绪状态，等待下次运行
@@ -182,13 +195,13 @@ while ($true) {
 - 检查 `run_scheduled.bat` 文件是否创建成功
 
 **问题：任务运行了但没收到邮件**
-- 先查看最近日志：`powershell -ExecutionPolicy Bypass -File .\view_last_log.ps1 -Tail 300`
-- 检查日志里是否出现 `发送邮件失败`、`未配置收件人邮箱`、SMTP 登录失败等提示
+- 先查看任务结果：`Get-ScheduledTaskInfo -TaskName "BUAA_场地预约"`
+- 手动运行 `run_auto.bat`，检查控制台输出中是否出现 `发送邮件失败`、`未配置收件人邮箱`、SMTP 登录失败等提示
 - 确认 `configs/default.yaml` 中 `email.receiver`、`email.sender`、`email.password` 配置正确
 
 **问题：程序运行但没有预约成功**
 - 检查 `configs/default.yaml` 配置是否正确
-- 查看程序运行日志，确认账号密码是否正确
+- 手动运行并查看控制台输出，确认账号密码是否正确
 - 确认目标场地是否可预约
 
 ---
